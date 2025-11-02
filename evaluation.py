@@ -13,6 +13,31 @@ def tensor_to_uint8_image(tensor):
     img = (img * 255).astype(np.uint8)
     return img
 
+def compute_psnr(hr_uint8, pred_uint8, data_range=255.0):
+    return compare_psnr(hr_uint8, pred_uint8, data_range=data_range)
+
+def compute_ssim_safe(hr_uint8, pred_uint8):
+    try:
+        return compare_ssim(hr_uint8, pred_uint8, data_range=255.0, channel_axis=2, win_size=7)
+    except TypeError:
+        return compare_ssim(hr_uint8, pred_uint8, data_range=255.0, multichannel=True, win_size=7)
+
+def compute_snr_db(hr_tensor, pred_tensor):
+    hr = hr_tensor.cpu().numpy()
+    pr = pred_tensor.cpu().numpy()
+    signal_power = np.sum(hr**2)
+    noise_power = np.sum((hr - pr)**2)
+    if noise_power <= 1e-12:
+        return float('inf')
+    return 10.0 * np.log10(signal_power / noise_power)
+
+def compute_lpips(lpips_fn, hr_tensor, pred_tensor):
+    hr_n = hr_tensor.unsqueeze(0) * 2.0 - 1.0
+    pr_n = pred_tensor.unsqueeze(0) * 2.0 - 1.0
+    with torch.no_grad():
+        d = lpips_fn(hr_n, pr_n, normalize=True)
+    return float(d.mean().cpu().numpy())
+
 def evaluate(
     model,
     loader,
