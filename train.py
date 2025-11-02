@@ -102,7 +102,8 @@ def train(train_dataset_dir="DIV2K_train_HR",
 
         if (i + 1) % evaluate_model_interval == 0:
           model.eval()
-          results = evaluate(model, dataset_val, device, None)
+          results = evaluate(model, dataset_val, device, '{:s}/images'.format(save_dir), None)
+          print(results)
 
           df = pd.DataFrame(results)
           if not df.empty:
