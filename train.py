@@ -7,11 +7,15 @@ from torchvision import transforms
 from tqdm import tqdm
 
 import opt
-from evaluation import evaluate
+import evaluation
 from loss import InpaintingLoss
 from net import PConvUNet
 from dataset import DIV2K
 from utils import save_ckpt
+
+import importlib
+importlib.reload(evaluation)
+from evaluation import evaluate
 
 
 class InfiniteSampler(data.sampler.Sampler):
@@ -76,6 +80,8 @@ def train(train_dataset_dir="DIV2K_train_HR",
         filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
     criterion = InpaintingLoss().to(device)
 
+    best = -float("inf")
+    best_iter = None
     for i in tqdm(range(start_iter, max_iter)):
         model.train()
 
@@ -95,15 +101,25 @@ def train(train_dataset_dir="DIV2K_train_HR",
                     [('model', model)], [('optimizer', optimizer)], i + 1)
 
         if (i + 1) % evaluate_model_interval == 0:
-            model.eval()
-            results = evaluate(model, dataset_val, device, None)
-            
-            df = pd.DataFrame(results)
-            mean_psnr = df['psnr_pred'].mean()
-            if best is None or mean_psnr > best:
-                best = mean_psnr
-                torch.save({'model': model.state_dict(), 'opt': opt.state_dict(), 'epoch': epoch}, 'best_inpaint.pth')
-                print(f"New best model saved (epoch {epoch}) mean PSNR {mean_psnr:.4f}")
+          model.eval()
+          results = evaluate(model, dataset_val, device, None)
+
+          df = pd.DataFrame(results)
+          if not df.empty:
+              mean_psnr = float(df['psnr_pred'].mean())
+
+              if mean_psnr > best:
+                  best = mean_psnr
+                  best_iter = i + 1
+                  torch.save({
+                      'model': model.state_dict(),
+                      'optimizer': optimizer.state_dict(),
+                      'iter': i + 1,
+                      'mean_psnr': mean_psnr,
+                  }, 'best_inpaint.pth')
+                  print(f"New best model saved (iter {i+1}) mean PSNR {mean_psnr:.4f}")
+          else:
+              print("Eval returned no results — skipping best-model update.")
 
 
 
