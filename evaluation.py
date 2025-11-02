@@ -87,6 +87,9 @@ def evaluate(model, loader, device, lpips_fn=None, batch_size=16, num_workers=0)
                 snr_pred  = compute_snr_db(clean[i], pred[i])
                 lp_pred   = compute_lpips(lpips_fn, clean[i], pred[i]) if lpips_fn is not None else None
 
+                save_path = os.path.join(save_dir, f"iter_{len(results)+i}_pred.png")
+                save_image(pred[i].cpu(), save_path)
+                
                 item = {
                     'psnr_pred': psnr_pred,
                     'ssim_pred': ssim_pred,
