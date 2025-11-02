@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import torch
 from torch.utils import data
@@ -95,8 +96,16 @@ def train(train_dataset_dir="DIV2K_train_HR",
 
         if (i + 1) % evaluate_model_interval == 0:
             model.eval()
-            evaluate(model, dataset_val, device,
-                    '{:s}/images/test_{:d}.jpg'.format(save_dir, i + 1))
+            results = evaluate(model, dataset_val, device, None)
+            
+            df = pd.DataFrame(results)
+            mean_psnr = df['psnr_pred'].mean()
+            if best is None or mean_psnr > best:
+                best = mean_psnr
+                torch.save({'model': model.state_dict(), 'opt': opt.state_dict(), 'epoch': epoch}, 'best_inpaint.pth')
+                print(f"New best model saved (epoch {epoch}) mean PSNR {mean_psnr:.4f}")
+
+
 
 if __name__ == "__main__":
     train()
