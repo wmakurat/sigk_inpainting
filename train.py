@@ -1,4 +1,3 @@
-import argparse
 import numpy as np
 import os
 import torch
@@ -11,8 +10,7 @@ from evaluation import evaluate
 from loss import InpaintingLoss
 from net import PConvUNet
 from dataset import DIV2K
-from io import load_ckpt
-from io import save_ckpt
+from utils import save_ckpt
 
 
 class InfiniteSampler(data.sampler.Sampler):
@@ -68,7 +66,7 @@ def train(train_dataset_dir="DIV2K_train_HR",
         dataset_train, batch_size=batch_size,
         sampler=InfiniteSampler(len(dataset_train)),
         num_workers=n_threads))
-    print(len(dataset_train))
+    print("dataset size: ",len(dataset_train))
     model = PConvUNet().to(device)
 
     start_iter = 0
