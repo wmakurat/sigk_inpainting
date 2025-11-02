@@ -36,81 +36,66 @@ class InfiniteSampler(data.sampler.Sampler):
                 order = np.random.permutation(self.num_samples)
                 i = 0
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    # training options
-    parser.add_argument('--root', type=str, default='/srv/datasets/Places2')
-    parser.add_argument('--mask_root', type=str, default='./masks')
-    parser.add_argument('--save_dir', type=str, default='./snapshots/default')
-    parser.add_argument('--lr', type=float, default=2e-4)
-    parser.add_argument('--max_iter', type=int, default=1000000)
-    parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--n_threads', type=int, default=16)
-    parser.add_argument('--save_model_interval', type=int, default=50000)
-    parser.add_argument('--evaluate_interval', type=int, default=5000)
-    parser.add_argument('--log_interval', type=int, default=10)
-    parser.add_argument('--image_size', type=int, default=256)
-    parser.add_argument('--resume', type=str)
-    args = parser.parse_args()
+def train(train_dataset_dir="DIV2K_train_HR", 
+          validation_dataset_dir="DIV2K_valid_HR",
+          image_size=256,
+          cut_boxes_dict={3: 20, 32: 2},
+          save_dir="save",
+          learning_rate=2e-3,
+          max_iter=700*20,
+          batch_size=16,
+          n_threads=16,
+          save_model_interval=700,
+          evaluate_model_interval=700,
+          log_interval=100):
 
     torch.backends.cudnn.benchmark = True
     device = torch.device('cuda')
 
-    if not os.path.exists(args.save_dir):
-        os.makedirs('{:s}/images'.format(args.save_dir))
-        os.makedirs('{:s}/ckpt'.format(args.save_dir))
+    if not os.path.exists(save_dir):
+        os.makedirs('{:s}/images'.format(save_dir))
+        os.makedirs('{:s}/ckpt'.format(save_dir))
 
-    size = (args.image_size, args.image_size)
+    size = (image_size, image_size)
     img_tf = transforms.Compose(
         [transforms.Resize(size=size), transforms.ToTensor(),
         transforms.Normalize(mean=opt.MEAN, std=opt.STD)])
-    mask_tf = transforms.Compose(
-        [transforms.Resize(size=size), transforms.ToTensor()])
 
-    dataset_train = DIV2K(args.root, args.mask_root, img_tf, mask_tf, 'train')
-    dataset_val = DIV2K(args.root, args.mask_root, img_tf, mask_tf, 'val')
+    dataset_train = DIV2K(train_dataset_dir, img_tf, cut_boxes_dict)
+    dataset_val = DIV2K(validation_dataset_dir, img_tf, cut_boxes_dict)
 
     iterator_train = iter(data.DataLoader(
-        dataset_train, batch_size=args.batch_size,
+        dataset_train, batch_size=batch_size,
         sampler=InfiniteSampler(len(dataset_train)),
-        num_workers=args.n_threads))
+        num_workers=n_threads))
     print(len(dataset_train))
     model = PConvUNet().to(device)
 
-    lr = args.lr
-
     start_iter = 0
     optimizer = torch.optim.Adam(
-        filter(lambda p: p.requires_grad, model.parameters()), lr=lr)
+        filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
     criterion = InpaintingLoss().to(device)
 
-    if args.resume:
-        start_iter = load_ckpt(
-            args.resume, [('model', model)], [('optimizer', optimizer)])
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = lr
-        print('Starting from iter ', start_iter)
-
-    for i in tqdm(range(start_iter, args.max_iter)):
+    for i in tqdm(range(start_iter, max_iter)):
         model.train()
 
         image, mask, gt = [x.to(device) for x in next(iterator_train)]
         output, _ = model(image, mask)
         loss = criterion(image, mask, output, gt)
 
-        if (i + 1) % args.log_interval == 0:
+        if (i + 1) % log_interval == 0:
             print('Loss: ', loss)
 
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if (i + 1) % args.save_model_interval == 0 or (i + 1) == args.max_iter:
-            save_ckpt('{:s}/ckpt/{:d}.pth'.format(args.save_dir, i + 1),
+        if (i + 1) % save_model_interval == 0 or (i + 1) == max_iter:
+            save_ckpt('{:s}/ckpt/{:d}.pth'.format(save_dir, i + 1),
                     [('model', model)], [('optimizer', optimizer)], i + 1)
 
-        if (i + 1) % args.evaluate_interval == 0:
+        if (i + 1) % evaluate_model_interval == 0:
             model.eval()
             evaluate(model, dataset_val, device,
-                    '{:s}/images/test_{:d}.jpg'.format(args.save_dir, i + 1))
+                    '{:s}/images/test_{:d}.jpg'.format(save_dir, i + 1))
 

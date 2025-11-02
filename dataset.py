@@ -14,11 +14,11 @@ class DIV2K(Dataset):
     Returns: (gt_img * mask, mask, gt_img)
     """
 
-    def __init__(self, img_root, img_transform, sizes_max_counts, exts=(".jpg", ".jpeg", ".png"), seed=None):
+    def __init__(self, img_root, img_transform, sizes_max_counts, seed=None):
         self.img_transform = img_transform
         self.sizes_max_counts = dict(sizes_max_counts)
         self.rng = random.Random(seed)
-
+        exts=(".jpg", ".png")
         paths = []
         for ext in exts:
             paths.extend(glob(os.path.join(img_root, f"*{ext}")))
