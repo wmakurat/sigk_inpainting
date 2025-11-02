@@ -5,7 +5,7 @@ from skimage.metrics import peak_signal_noise_ratio as compare_psnr
 from skimage.metrics import structural_similarity as compare_ssim
 import lpips
 import random
-import tqdm
+from tqdm import tqdm
 
 def tensor_to_uint8_image(tensor):
     img = tensor.detach().cpu().permute(1, 2, 0).numpy()
