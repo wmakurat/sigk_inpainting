@@ -51,6 +51,7 @@ class InpaintingLoss(nn.Module):
         self.extractor = VGG16FeatureExtractor()
 
     def forward(self, input, mask, output, gt):
+        output = output.clamp(0, 1)
         output_comp = mask * input + (1 - mask) * output
 
         loss_hole = self.l1((1 - mask) * output, (1 - mask) * gt)
