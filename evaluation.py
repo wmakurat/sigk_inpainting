@@ -23,9 +23,10 @@ def evaluate(
     with torch.no_grad():
         for batch in tqdm(loader, desc="Eval"):
             masked = batch[0]
+            mask = batch[1]            
             clean = batch[2]
 
-            pred = model(masked)
+            pred = model(masked, mask)
 
             b = masked.size(0)
             for i in range(b):
