@@ -62,8 +62,7 @@ def train(train_dataset_dir="DIV2K_train_HR",
 
     size = (image_size, image_size)
     img_tf = transforms.Compose(
-        [transforms.Resize(size=size), transforms.ToTensor(),
-        transforms.Normalize(mean=opt.MEAN, std=opt.STD)])
+        [transforms.Resize(size=size), transforms.ToTensor()]) # transforms.Normalize(mean=opt.MEAN, std=opt.STD)
 
     dataset_train = DIV2K(train_dataset_dir, img_tf, cut_boxes_dict)
     dataset_val = DIV2K(validation_dataset_dir, img_tf, cut_boxes_dict)
