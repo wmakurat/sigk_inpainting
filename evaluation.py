@@ -58,7 +58,7 @@ def _wrap_loader_if_needed(loader, batch_size=16, num_workers=0):
         return DataLoader(loader, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
 
-def evaluate(model, loader, device, lpips_fn=None, batch_size=16, num_workers=0):
+def evaluate(model, loader, device, save_dir, lpips_fn=None, batch_size=16, num_workers=0):
     """
     Zwraca listę dictów z metrykami dla każdego obrazu w walidacji.
     Wywołanie w Twoim trainie:  results = evaluate(model, dataset_val, device, None)
