@@ -84,7 +84,7 @@ def train(train_dataset_dir="DIV2K_train_HR",
         loss = criterion(image, mask, output, gt)
 
         if (i + 1) % log_interval == 0:
-            print('Loss: ', loss)
+            print('Loss: ', loss.item())
 
         optimizer.zero_grad()
         loss.backward()
