@@ -40,15 +40,16 @@ def train(train_dataset_dir="DIV2K_train_HR",
           cut_boxes_dict={3: 20, 32: 2},
           save_dir="save",
           learning_rate=2e-3,
-          max_iter=700*20/16,
+          max_iter=900,
           batch_size=16,
           n_threads=8,
-          save_model_interval=700,
-          evaluate_model_interval=700,
-          log_interval=100):
+          save_model_interval=35,
+          evaluate_model_interval=35,
+          log_interval=5,
+          device='cuda'):
 
     torch.backends.cudnn.benchmark = True
-    device = torch.device('cpu')
+    device = torch.device(device)
 
     if not os.path.exists(save_dir):
         os.makedirs('{:s}/images'.format(save_dir))
