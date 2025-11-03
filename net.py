@@ -96,5 +96,6 @@ class PConvUNet(nn.Module):
             mask = torch.cat([mask, skip_m], dim=1)
 
             h, mask = dec(h, mask)
-
+            
+        h = torch.sigmoid(h)
         return h, mask
