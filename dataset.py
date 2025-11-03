@@ -48,6 +48,6 @@ class DIV2K(Dataset):
             raise ValueError(f"Expected tensor CxHxW, got {gt_img.shape}")
         _, H, W = gt_img.shape
 
-        mask = self._make_mask(H, W).repeat(3, 1, 1)
+        mask = self._make_mask(H, W)
         masked = gt_img * mask
         return masked, mask, gt_img
