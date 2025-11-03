@@ -51,7 +51,8 @@ def train(train_dataset_dir="DIV2K_train_HR",
           save_model_interval=35,
           evaluate_model_interval=35,
           log_interval=5,
-          device='cuda'):
+          device='cuda',
+          pretrained_path=None):
 
     torch.backends.cudnn.benchmark = True
     device = torch.device(device)
@@ -74,6 +75,21 @@ def train(train_dataset_dir="DIV2K_train_HR",
     print("dataset size: ",len(dataset_train))
     model = PConvUNet().to(device)
 
+    if pretrained_path is not None and os.path.isfile(pretrained_path):
+        print(f"Loading pretrained model from {pretrained_path}")
+        checkpoint = torch.load(pretrained_path, map_location=device)
+
+        if 'model' in checkpoint:
+            model.load_state_dict(checkpoint['model'])
+        elif 'state_dict' in checkpoint:
+            model.load_state_dict(checkpoint['state_dict'])
+        else:
+            model.load_state_dict(checkpoint)
+
+        print("Pretrained model loaded successfully.")
+    else:
+        print("Pretrained model not found.")
+              
     start_iter = 0
     optimizer = torch.optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()), lr=learning_rate)
